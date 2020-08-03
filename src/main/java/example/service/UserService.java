@@ -23,6 +23,9 @@ import java.util.stream.Collectors;
 @Service
 public class UserService implements UserDetailsService {
 
+    @Value("${mail.ativation.active}")
+    private boolean isMailAuth;
+
     @Autowired
     private PasswordEncoder passwordEncoder;
 
@@ -47,7 +50,7 @@ public class UserService implements UserDetailsService {
 
     public boolean addUser(User user){
         User userFromDb = userRepo.findByUsername(user.getUsername());
-        if(userFromDb != null){
+        if( isMailAuth && userFromDb != null){
             return false;
         }
         user.setActive(true);
@@ -56,7 +59,10 @@ public class UserService implements UserDetailsService {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         userRepo.save(user);
 
-        return sendMessage(user);
+        if (isMailAuth) {
+            return sendMessage(user);
+        }
+        return true;
     }
 
     private boolean sendMessage(User user) {
